@@ -1,0 +1,77 @@
+<!-- component -->
+<link href="/tailwind.css" rel="stylesheet">
+<link rel="stylesheet" href="/home.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+<div x-data="setup()" :class="{ 'dark': isDark }">
+  <div class="min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-white dark:bg-gray-700 text-black dark:text-white">
+  
+  <%- include('header'); -%>
+  <%- include('sidebar'); -%>
+      
+  <div class="h-full ml-14 mt-14 mb-10 md:ml-64">
+      <%console.log(data)%>
+
+  <% for(let i=0; i<data.length; i++) {%>
+    <div  class="p-4 m-4 grid grid-cols-1 md:grid-cols-2 w-9/10 bg-blue-400 rounded dark:bg-gray-900">
+      <div class="text-xl text-gray-500"> User name <span class="text-white"><%= data[i].user %></span> </div>
+      <div class="flex flex-row-reverse w-full"><%= data[i].time %></div>
+      <div class="text-xl">Donar Naame  : <span><%= data[i].orders[0].buyername %></span></div>
+      <div class="text-xl">Food items : <span><%= data[i].orders[0].buyerno %></span></div>
+      <div class="col-span-1 text-xl md:col-span-2">Location : <span><%= data[i].orders[0].remarks %></span> </div>
+      
+      <% for(let j=0; j<data[i].orders[0].products.length; j++) {%>
+
+      <div id='cart-${data.sno}' class="col-span-1 md:col-span-2 h-12 grid grid-cols-7 items-center px-5 text-sm md:text-md  w-9/10 border-b-4 border-gray-500 my-5  rounded bg-blue-700 dark:bg-gray-700 text-white">
+        <h1 class="col-span-1"><%= data[i].orders[0].products[j].sno %></h1>
+        <h1 class="col-span-2"><%= data[i].orders[0].products[j].name %></h1>
+        <h1 class="col-span-1"><%= data[i].orders[0].products[j].packing %></h1>
+        <h1 id='cart-quantity-${data.sno}' class="col-span-1"><%= data[i].orders[0].products[j].quantity %></h1>
+        <h1><%= data[i].orders[0].products[j].rate %></h1>
+        <h1 id='cart-amount-${data.sno}'><%= data[i].orders[0].products[j].amount %></h1>
+      </div>
+      
+      <% }%>
+     
+      <div class="bg-green-500 text-black mx-2 rounded p-4">Amount: <span><%= data[i].orders[0].amount %></span> </div>
+    </div>
+  <% }%>
+
+
+  </div>
+  </div>
+</div>    
+  
+
+  
+
+
+
+
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
+<script>
+  const setup = () => {
+    const getTheme = () => {
+      if (window.localStorage.getItem('dark')) {
+        return JSON.parse(window.localStorage.getItem('dark'))
+      }
+      return !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    const setTheme = (value) => {
+      window.localStorage.setItem('dark', value)
+    }
+    return {
+      loading: true,
+      isDark: getTheme(),
+      toggleTheme() {
+        this.isDark = !this.isDark
+        setTheme(this.isDark)
+      },
+    }
+  }
+</script>

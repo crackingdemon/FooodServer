@@ -1,0 +1,241 @@
+<!-- component -->
+<link href="/tailwind.css" rel="stylesheet">
+<link rel="stylesheet" href="/home.css">
+
+<div x-data="setup()" :class="{ 'dark': isDark }">
+  <div class="min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-white dark:bg-gray-700 text-black dark:text-white">
+  
+  <%- include('header'); -%>
+  <%- include('sidebar'); -%>
+      
+  <div class="h-full ml-14 mt-14 mb-10 md:ml-64">
+      <%console.log(data)%>
+
+  <% for(let i=0; i<data.length; i++) {%>
+    <div id="<%=data[i]._id%>" class="p-4 m-4 grid grid-cols-1 md:grid-cols-2 w-9/10 bg-blue-400 rounded dark:bg-gray-900">
+      <div class="text-xl text-black-500"> Submitted by-<span class="text-black"><%= data[i].user %></span> </div>
+      <div class="flex flex-row-reverse w-full"><%= data[i].time %></div>
+      <div class="text-xl">Donar name  : <span><%= data[i].orders[0].buyername %></span></div>
+      <div class="text-xl">Food Items : <span><%= data[i].orders[0].buyerno %></span></div>
+      <div class="col-span-1 text-xl md:col-span-2">Location: <span><%= data[i].orders[0].remarks %></span> </div>
+      
+      <% for(let j=0; j<data[i].orders[0].products.length; j++) {%>
+
+      <div id='cart-${data.sno}' class="col-span-1 md:col-span-2 h-12 grid grid-cols-7 items-center px-5 text-sm md:text-md  w-9/10 border-b-4 border-gray-500 my-5  rounded bg-blue-700 dark:bg-gray-700 text-white">
+        <h1 class="col-span-1"><%= data[i].orders[0].products[j].sno %></h1>
+        <h1 class="col-span-2"><%= data[i].orders[0].products[j].name %></h1>
+        <h1 class="col-span-1"><%= data[i].orders[0].products[j].packing %></h1>
+        <h1 id='cart-quantity-${data.sno}' class="col-span-1"><%= data[i].orders[0].products[j].quantity %></h1>
+        <h1><%= data[i].orders[0].products[j].rate %></h1>
+        <h1 id='cart-amount-${data.sno}'><%= data[i].orders[0].products[j].amount %></h1>
+      </div>
+      
+      <% }%>
+
+      <div onclick="downloadSeparate('<%= data[i]._id %>')" class="cursor-pointer hover:bg-red-400 bg-red-500 mx-2 rounded p-4">Download as Excel</div>
+      <div class="bg-green-500 mx-2 rounded p-4">Amount: <span><%= data[i].orders[0].amount %></span> </div>
+      <form action="/admin/edit-order" method="post">
+        <input name="id" value="<%=data[i]._id%>" class="hidden" type="text">
+        <button type="submit" class="bg-red-500 my-2 mx-2 hover:bg-red-400 cursor-pointer rounded p-4">Edit the order</button>
+        </form>
+      <div  onclick="addToArchive('<%=data[i]._id%>')" class="bg-green-500 m-2 rounded p-4">Donation Received <span></span> </div>
+    </div>
+  <% }%>
+
+  <div class="m-2 p-3 bg-red-300 rounded cursor-pointer flex justify-center items-center" onclick="downloadAgainData(`<%=data%>`)">Download as Excel</div>
+
+  </div>
+  </div>
+</div>    
+  
+
+
+<script>
+
+const addToArchive = async (id)=>{
+  alert('Do you want to add to archive')
+  const temp = await fetch('/admin/add-to-archive',{
+              method: "POST",
+              headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json"
+              },
+              body: JSON.stringify({id:id})
+          })
+    let res = await temp.json();
+    if (res.status === 'ok') {
+      alert('added to archive');
+      document.getElementById(`${id}`).style.display ='none';
+
+    }
+    else{
+      alert(res.error);
+    }
+}
+
+  const downloadSeparate = async (data)=>{
+    console.log(data);
+    const temp = await fetch('/user/get-seperate-data',{
+              method: "POST",
+              headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json"
+              },
+              body: JSON.stringify({id:data})
+          })
+    let res = await temp.json();
+    console.log(res);
+    let tempData = [];
+    let exceldata = res;
+    let partyname='';
+    let remarks='';
+    for (let i = 0; i < exceldata.length; i++) {
+      for (let j = 0; j < exceldata[i].orders[0].products.length; j++) {
+        let temp={};
+        // temp.orderby=exceldata[i].user;
+        partyname=exceldata[i].orders[0].buyername;
+        remarks=exceldata[i].orders[0].remarks;
+        temp.Sno=j+1;        
+        temp.Name=exceldata[i].orders[0].products[j].name;
+        temp.Packing=exceldata[i].orders[0].products[j].packing;
+        temp.Quantity=exceldata[i].orders[0].products[j].quantity;
+        temp.Rate=exceldata[i].orders[0].products[j].rate;
+        temp.Amount=exceldata[i].orders[0].products[j].amount;
+        tempData.push(temp);
+      }        
+    }
+    console.log(tempData);
+    JSONToCSVConvertor(tempData, "Seperate List", true,partyname,remarks);
+  }
+
+  const downloadAgainData = async ()=>{
+    let data=[];
+    const temp = await fetch('/user/get-data',{
+              method: "POST",
+              headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json"
+              },
+              body: JSON.stringify(data)
+          })
+    let res = await temp.json();
+    console.log(res);
+    let exceldata = res;
+    for (let i = 0; i < exceldata.length; i++) {
+      for (let j = 0; j < exceldata[i].orders[0].products.length; j++) {
+        let temp={};
+        temp.sno=(j==0?'Sno':exceldata[i].orders[0].products[j].sno);
+        temp.name=(j==0?'Name':exceldata[i].orders[0].products[j].name);
+        temp.packing=(j==0?'Packing':exceldata[i].orders[0].products[j].packing);
+        temp.quantity=(j==0?'Quantity':exceldata[i].orders[0].products[j].quantity);
+        temp.rate=(j==0?'Rate':exceldata[i].orders[0].products[j].rate);
+        temp.amount=(j==0?'Amount':exceldata[i].orders[0].products[j].amount);
+        data.push(temp);
+      }        
+    }
+    JSONToCSVConvertor(data, "Orders List", true);
+  }
+  function JSONToCSVConvertor(JSONData, ReportTitle, ShowLabel,partyname,remarks) {
+      //If JSONData is not an object then JSON.parse will parse the JSON string in an Object
+      var arrData = typeof JSONData != 'object' ? JSON.parse(JSONData) : JSONData;
+      
+      // add \n or remove to give gaps
+      var CSV = 'sep=,' + '\r\r';
+      
+      //This condition will generate the Label/Header
+      if (ShowLabel) {
+          var row = `Partyname,${partyname},\nRemarks,${remarks},\n`;
+          
+          //This loop will extract the label from 1st index of on array
+          for (var index in arrData[0]) {
+              
+              //Now convert each value to string and comma-seprated
+              row += index + ',';
+          }
+  
+          row = row.slice(0, -1);
+          
+          //append Label row with line break
+          CSV += row + '\r\n';
+      }
+      console.log(CSV);
+      
+      //1st loop is to extract each row
+      for (var i = 0; i < arrData.length; i++) {
+          var row = "";
+          
+          //2nd loop will extract each column and convert it in string comma-seprated
+          for (var index in arrData[i]) {
+              row += '"' + arrData[i][index] + '",';
+          }
+  
+          row.slice(0, row.length - 1);
+          
+          //add a line break after each row
+          CSV += row + '\r\n';
+      }
+  
+      if (CSV == '') {        
+          alert("Invalid data");
+          return;
+      }   
+      
+      //Generate a file name
+      var fileName = "MyReport_";
+      //this will remove the blank-spaces from the title and replace it with an underscore
+      fileName += ReportTitle.replace(/ /g,"_");   
+      
+      //Initialize file format you want csv or xls
+      var uri = 'data:text/csv;charset=utf-8,' + escape(CSV);
+      
+      // Now the little tricky part.
+      // you can use either>> window.open(uri);
+      // but this will not work in some browsers
+      // or you will not get the correct file extension    
+      
+      //this trick will generate a temp <a /> tag
+      var link = document.createElement("a");    
+      link.href = uri;
+      
+      //set the visibility hidden so it will not effect on your web-layout
+      link.style = "visibility:hidden";
+      link.download = fileName + ".csv";
+      
+      //this part will append the anchor tag and remove it after automatic click
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  }
+  </script>
+  
+
+
+
+
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
+<script>
+  const setup = () => {
+    const getTheme = () => {
+      if (window.localStorage.getItem('dark')) {
+        return JSON.parse(window.localStorage.getItem('dark'))
+      }
+      return !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    const setTheme = (value) => {
+      window.localStorage.setItem('dark', value)
+    }
+    return {
+      loading: true,
+      isDark: getTheme(),
+      toggleTheme() {
+        this.isDark = !this.isDark
+        setTheme(this.isDark)
+      },
+    }
+  }
+</script>
